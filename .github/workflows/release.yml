@@ -1,0 +1,166 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    branches:
+      - main
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to publish or republish (for example v1.2.3)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    outputs:
+      release-created: ${{ steps.release.outputs.release_created }}
+      sha: ${{ steps.release.outputs.sha }}
+      version: ${{ steps.release.outputs.version }}
+
+    steps:
+      - name: Create or update release pull request
+        id: release
+        uses: googleapis/release-please-action@8b8fd2cc23b2e18957157a9d923d75aa0c6f6ad5 # v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+
+  release-ref:
+    if: >-
+      always() &&
+      (github.event_name == 'workflow_dispatch' || needs.release-please.outputs.release-created == 'true')
+    needs:
+      - release-please
+    runs-on: ubuntu-latest
+    outputs:
+      major: ${{ steps.release-ref.outputs.major }}
+      minor: ${{ steps.release-ref.outputs.minor }}
+      ref: ${{ steps.release-ref.outputs.ref }}
+      version: ${{ steps.release-ref.outputs.version }}
+
+    steps:
+      - name: Resolve and validate release reference
+        id: release-ref
+        env:
+          CREATED_SHA: ${{ needs.release-please.outputs.sha }}
+          CREATED_VERSION: ${{ needs.release-please.outputs.version }}
+          REQUESTED_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            tag="$REQUESTED_TAG"
+            if [[ ! "$tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+              echo "Expected a stable semantic release tag such as v1.2.3, got: $tag" >&2
+              exit 1
+            fi
+            version="${tag#v}"
+            ref="$tag"
+          else
+            version="$CREATED_VERSION"
+            ref="$CREATED_SHA"
+          fi
+
+          if [[ ! "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Expected a stable semantic version, got: $version" >&2
+            exit 1
+          fi
+
+          {
+            echo "major=${BASH_REMATCH[1]}"
+            echo "minor=${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+            echo "ref=$ref"
+            echo "version=$version"
+          } >> "$GITHUB_OUTPUT"
+
+  publish:
+    needs:
+      - release-ref
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Check out release
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ needs.release-ref.outputs.ref }}
+
+      - name: Capture image revision
+        id: revision
+        env:
+          EXPECTED_VERSION: ${{ needs.release-ref.outputs.version }}
+        run: |
+          set -euo pipefail
+          recorded_version="$(tr -d '[:space:]' < version.txt)"
+          if [[ "$recorded_version" != "$EXPECTED_VERSION" ]]; then
+            echo "Release version $EXPECTED_VERSION does not match version.txt ($recorded_version)." >&2
+            exit 1
+          fi
+
+          sha="$(git rev-parse HEAD)"
+          {
+            echo "sha=$sha"
+            echo "short-sha=${sha::12}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate image metadata
+        id: metadata
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/chroniclekeeper-postgres
+          tags: |
+            type=raw,value=${{ needs.release-ref.outputs.version }}
+            type=raw,value=${{ needs.release-ref.outputs.minor }}
+            type=raw,value=${{ needs.release-ref.outputs.major }}
+            type=raw,value=latest
+            type=raw,value=${{ steps.revision.outputs.sha }}
+            type=raw,value=sha-${{ steps.revision.outputs.short-sha }}
+
+      - name: Build and publish image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          pull: true
+          push: true
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          cache-from: type=gha,scope=release
+          cache-to: type=gha,mode=max,scope=release
+          provenance: mode=max
+          sbom: true
