@@ -160,7 +160,12 @@ jobs:
           push: true
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
-          cache-from: type=gha,scope=release
+          # Reuse the per-platform caches produced by the successful CI run.
+          # Keep the release scope as a fallback for manual republish runs.
+          cache-from: |
+            type=gha,scope=ci-amd64
+            type=gha,scope=ci-arm64
+            type=gha,scope=release
           cache-to: type=gha,mode=max,scope=release
           provenance: mode=max
           sbom: true

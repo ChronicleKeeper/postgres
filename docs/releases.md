@@ -25,6 +25,15 @@ For release `1.2.3` at commit `012345...`, GHCR receives:
 
 Every release is a Linux AMD64/ARM64 manifest and includes BuildKit provenance plus an SBOM attestation.
 
+## How is the image build cached?
+
+CI stores separate BuildKit caches for the AMD64 and ARM64 image jobs because
+their compiled extension artifacts are architecture-specific. The release
+build imports both of those caches, so it can reuse the compilation already
+validated by CI instead of rebuilding both extensions. It also reads the
+release cache as a fallback for manual republish runs. A cache miss is safe:
+BuildKit regenerates the layers from the pinned inputs.
+
 ## Which GitHub permissions are required?
 
 GHCR publication utilizes the repository-scoped `GITHUB_TOKEN`; no personal registry token is required. In repository settings, allow GitHub Actions to create pull requests. Keep the workflow permission default restrictive—the individual jobs request only `contents: write`, `pull-requests: write`, or `packages: write` where needed.
