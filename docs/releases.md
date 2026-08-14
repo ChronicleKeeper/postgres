@@ -8,7 +8,7 @@ The [`Release` workflow](../.github/workflows/release.yml) runs after `CI` succe
 
 The first feature commit after this repository is bootstrapped proposes `0.1.0`. Throughout the lifecycle, `fix:` increments the patch version, `feat:` increments the minor version, and a breaking change increments the major version.
 
-Branch protection should require both `Image (linux/amd64)` and `Image (linux/arm64)` CI jobs before merges to `main`. That is the quality gate Release Please relies on.
+Branch protection should require the `Image (linux/amd64)` CI job before merges to `main`. That is the quality gate Release Please relies on.
 
 ## Which tags are published?
 
@@ -23,16 +23,16 @@ For release `1.2.3` at commit `012345...`, GHCR receives:
 | full Git SHA | Immutable by convention | Existing Chronicle Keeper compatibility and audit |
 | `sha-0123456789ab` | Immutable by convention | Readable audit reference |
 
-Every release is a Linux AMD64/ARM64 manifest and includes BuildKit provenance plus an SBOM attestation.
+Every release is a Linux AMD64 image and includes BuildKit provenance plus an SBOM attestation.
 
 ## How is the image build cached?
 
-CI stores separate BuildKit caches for the AMD64 and ARM64 image jobs because
-their compiled extension artifacts are architecture-specific. The release
-build imports both of those caches, so it can reuse the compilation already
-validated by CI instead of rebuilding both extensions. It also reads the
-release cache as a fallback for manual republish runs. A cache miss is safe:
-BuildKit regenerates the layers from the pinned inputs.
+CI stores the BuildKit cache for the AMD64 image job because its compiled
+extension artifacts are architecture-specific. The release build imports that
+cache, so it can reuse the compilation already validated by CI instead of
+rebuilding the extensions. It also reads the release cache as a fallback for
+manual republish runs. A cache miss is safe: BuildKit regenerates the layers
+from the pinned inputs.
 
 ## Which GitHub permissions are required?
 
@@ -44,7 +44,7 @@ The existing package is `ghcr.io/chroniclekeeper/chroniclekeeper-postgres`. Beca
 
 ## How do you retry a failed publication?
 
-Creating the GitHub release and pushing a multi-platform image are separate operations. If the image build or registry push fails after the release exists, open the `Release` workflow, choose **Run workflow**, and enter the existing stable tag such as `v1.2.3`. The workflow validates the tag, checks out that exact release, and republishes all tags from the same commit.
+Creating the GitHub release and pushing the image are separate operations. If the image build or registry push fails after the release exists, open the `Release` workflow, choose **Run workflow**, and enter the existing stable tag such as `v1.2.3`. The workflow validates the tag, checks out that exact release, and republishes all tags from the same commit.
 
 Do not invent a new tag merely to retry infrastructure. Once publication succeeds, verify it with:
 

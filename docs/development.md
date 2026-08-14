@@ -41,7 +41,7 @@ make test IMAGE=chroniclekeeper-postgres:ci
 - a BM25 index can be created and returns the expected first result; and
 - the final PostgreSQL process remains healthy after initialization.
 
-The script removes its temporary container on success or failure. CI runs the same suite for `linux/amd64` and `linux/arm64`; ARM64 runs through QEMU on GitHub-hosted runners, so it will take longer than a native local test.
+The script removes its temporary container on success or failure. CI runs the same suite for the `linux/amd64` image.
 
 ## How do you change a dependency?
 

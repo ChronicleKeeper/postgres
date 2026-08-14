@@ -125,9 +125,6 @@ jobs:
             echo "short-sha=${sha::12}"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
 
@@ -155,16 +152,15 @@ jobs:
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           pull: true
           push: true
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
-          # Reuse the per-platform caches produced by the successful CI run.
+          # Reuse the cache produced by the successful CI run.
           # Keep the release scope as a fallback for manual republish runs.
           cache-from: |
-            type=gha,scope=ci-amd64
-            type=gha,scope=ci-arm64
+            type=gha,scope=ci
             type=gha,scope=release
           cache-to: type=gha,mode=max,scope=release
           provenance: mode=max
