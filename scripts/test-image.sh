@@ -50,13 +50,13 @@ BEGIN
     END IF;
 
     SELECT extversion INTO actual_version FROM pg_extension WHERE extname = 'vector';
-    IF actual_version <> '0.8.2' THEN
-        RAISE EXCEPTION 'expected vector 0.8.2, got %', actual_version;
+    IF actual_version <> '0.8.6' THEN
+        RAISE EXCEPTION 'expected vector 0.8.6, got %', actual_version;
     END IF;
 
     SELECT extversion INTO actual_version FROM pg_extension WHERE extname = 'pg_textsearch';
-    IF actual_version <> '1.0.0' THEN
-        RAISE EXCEPTION 'expected pg_textsearch 1.0.0, got %', actual_version;
+    IF actual_version <> '1.3.1' THEN
+        RAISE EXCEPTION 'expected pg_textsearch 1.3.1, got %', actual_version;
     END IF;
 
     IF abs(('[1,2,3]'::vector <-> '[1,2,4]'::vector) - 1.0) > 0.000001 THEN

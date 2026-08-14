@@ -7,8 +7,8 @@ For what this image is and why it has its own lifecycle, start at the [repositor
 | Component | Version | Purpose |
 | --- | --- | --- |
 | PostgreSQL | 17.10 | Database server and the `pg_trgm` extension |
-| pgvector | 0.8.2 | Vector columns, indexes, and distance operators |
-| pg_textsearch | 1.0.0 | BM25 relevance-ranked full-text search |
+| pgvector | 0.8.6 | Vector columns, indexes, and distance operators |
+| pg_textsearch | 1.3.1 | BM25 relevance-ranked full-text search |
 
 All versions are pinned in the `Dockerfile`. PostgreSQL is pinned by multi-platform manifest digest. The source archives for pgvector and pg_textsearch are checked against committed SHA-256 values before compilation. pgvector's host-specific CPU optimizations are disabled so an AMD64 build can run on a different AMD64 machine. The final stage starts again from the clean PostgreSQL image, so compilers and source trees do not enter the runtime image.
 

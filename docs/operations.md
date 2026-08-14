@@ -21,15 +21,20 @@ Before deploying a dependency update, read the upstream extension release notes 
 
 Why deploy the binary first? PostgreSQL can only execute an extension's update script after the target files exist on disk. Reversing those two steps makes the migration fail before it can change the catalog.
 
-## The current pg_textsearch constraint
+## Current coordinated extension upgrade
 
-The first standalone release intentionally carries `pg_textsearch` `1.0.0`. ChronicleKeeperSaaS migration `Version20260421140000` explicitly runs:
+The image ships `pg_textsearch` `1.3.1` and `pgvector` `0.8.6`. Chronicle Keeper Unified migration `Version20260821100000` advances the extension catalogs after the new image is running. Its older `Version20260421140000` migration follows the installed version rather than requesting a `1.0.0` downgrade, so a fresh realm can migrate directly on the new image.
+
+For existing data volumes, deploy the image first and then run the Unified realm migration command. Verify both catalogs afterward:
 
 ```sql
-ALTER EXTENSION pg_textsearch UPDATE TO '1.0.0';
+SELECT extname, extversion
+FROM pg_extension
+WHERE extname IN ('pg_textsearch', 'vector')
+ORDER BY extname;
 ```
 
-It also rebuilds BM25 indexes for the `1.0.0` on-disk format. A newer binary must not be published until that consumer migration is made forward-compatible and tested with both fresh and existing realm databases. Updating only the Dockerfile could cause fresh installations or existing upgrades to request an unavailable downgrade path.
+`pg_textsearch` `1.1.0` documents `ALTER EXTENSION ... UPDATE` from `1.0.0` without a reindex. Releases `1.2.0` and `1.3.1` add replication and concurrent-write correctness fixes; the Unified migration intentionally leaves existing BM25 indexes in place and its language synchronizer rebuilds only indexes whose text configuration is wrong.
 
 ## What should you inspect during an incident?
 

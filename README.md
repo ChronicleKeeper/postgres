@@ -39,7 +39,7 @@ You can also start the included database-only Compose stack with `docker compose
 
 The Dockerfile compiles the two third-party extensions that are not part of PostgreSQL, copies only their installation artifacts into the runtime image, and enables all three required extensions for newly initialized databases. The CI pipeline verifies extension versions and exercises vector distance, trigram similarity, and BM25 ranking. The release pipeline publishes Linux AMD64 and ARM64 images with an SBOM and provenance attestation.
 
-Be aware that initialization scripts only run for a new data directory. Existing volumes retain their extension catalog state and need a planned upgrade procedure. `pg_textsearch` is deliberately pinned to `1.0.0` because the current Chronicle Keeper consumer migration targets that exact version; upgrading it requires coordination with the application migration path.
+Be aware that initialization scripts only run for a new data directory. Existing volumes retain their extension catalog state and need the coordinated application migration described in the operations guide. The current Unified consumer upgrades `pg_textsearch` and `pgvector` only after this image supplies their target binaries.
 
 ## Further reading
 
