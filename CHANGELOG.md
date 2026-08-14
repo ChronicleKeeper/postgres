@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/ChronicleKeeper/postgres/compare/v1.1.0...v1.2.0) (2026-08-14)
+
+
+### Features
+
+* Use fuzzystrmatch and unaccent pg extensions ([ed947bf](https://github.com/ChronicleKeeper/postgres/commit/ed947bf1c14031b0ef5f1930fdef4b565e140c8a))
+
+
+### Bug Fixes
+
+* remove long running arm64 builds ([7326b75](https://github.com/ChronicleKeeper/postgres/commit/7326b759cdd5b5b9969212cd3e89e900f95ad9f5))
+
 ## [1.1.0](https://github.com/ChronicleKeeper/postgres/compare/v1.0.0...v1.1.0) (2026-08-14)
 
 
