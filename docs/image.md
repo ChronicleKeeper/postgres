@@ -6,15 +6,29 @@ For what this image is and why it has its own lifecycle, start at the [repositor
 
 | Component | Version | Purpose |
 | --- | --- | --- |
-| PostgreSQL | 17.10 | Database server and the `pg_trgm` extension |
+| PostgreSQL | 17.11 | Database server and PostgreSQL-contrib extensions |
 | pgvector | 0.8.6 | Vector columns, indexes, and distance operators |
 | pg_textsearch | 1.3.1 | BM25 relevance-ranked full-text search |
+| pg_trgm | 1.6 | Indexed substring and word-similarity retrieval |
+| fuzzystrmatch | 1.2 | Bounded Levenshtein distance for complete-title proximity |
+| unaccent | 1.1 | Accent-insensitive English/German full-text configurations |
 
-All versions are pinned in the `Dockerfile`. PostgreSQL is pinned by multi-platform manifest digest. The source archives for pgvector and pg_textsearch are checked against committed SHA-256 values before compilation. pgvector's host-specific CPU optimizations are disabled so an AMD64 build can run on a different AMD64 machine. The final stage starts again from the clean PostgreSQL image, so compilers and source trees do not enter the runtime image.
+All versions are pinned in the `Dockerfile`. PostgreSQL is pinned by
+multi-platform manifest digest; the three contrib extension versions travel
+with that base and are asserted by the smoke test. The source archives for
+pgvector and pg_textsearch are checked against committed SHA-256 values before
+compilation. pgvector's host-specific CPU optimizations are disabled so an
+AMD64 build can run on a different AMD64 machine. The final stage starts again
+from the clean PostgreSQL image, so compilers and source trees do not enter the
+runtime image.
 
 ## What happens on first start?
 
-The upstream PostgreSQL entrypoint initializes `POSTGRES_DB` and then executes [`initdb/00-create-extensions.sh`](../initdb/00-create-extensions.sh). That script enables `vector`, `pg_textsearch`, and `pg_trgm` in the selected database. If `POSTGRES_DB` is absent, the Chronicle Keeper default is `chroniclekeeper`.
+The upstream PostgreSQL entrypoint initializes `POSTGRES_DB` and then executes
+[`initdb/00-create-extensions.sh`](../initdb/00-create-extensions.sh). That
+script enables `vector`, `pg_textsearch`, `pg_trgm`, `fuzzystrmatch`, and
+`unaccent` in the selected database. If `POSTGRES_DB` is absent, the Chronicle
+Keeper default is `chroniclekeeper`.
 
 `pg_textsearch` must be available through `shared_preload_libraries`. The image's default command starts PostgreSQL with that setting. If you replace the container command, preserve the setting yourself:
 

@@ -22,7 +22,7 @@ docker run --detach \
     --env POSTGRES_USER=postgres \
     "$image" >/dev/null
 
-readonly ready_query="SELECT count(*) = 3 FROM pg_extension WHERE extname IN ('vector', 'pg_textsearch', 'pg_trgm');"
+readonly ready_query="SELECT count(*) = 5 FROM pg_extension WHERE extname IN ('vector', 'pg_textsearch', 'pg_trgm', 'fuzzystrmatch', 'unaccent');"
 for attempt in $(seq 1 60); do
     if docker exec "$container_name" \
         psql --tuples-only --no-align --username postgres --dbname "$database_name" \
@@ -45,6 +45,10 @@ DO $test$
 DECLARE
     actual_version text;
 BEGIN
+    IF current_setting('server_version') !~ '^17\.11' THEN
+        RAISE EXCEPTION 'expected PostgreSQL 17.11, got %', current_setting('server_version');
+    END IF;
+
     IF current_setting('shared_preload_libraries') <> 'pg_textsearch' THEN
         RAISE EXCEPTION 'pg_textsearch is not preloaded';
     END IF;
@@ -59,12 +63,35 @@ BEGIN
         RAISE EXCEPTION 'expected pg_textsearch 1.3.1, got %', actual_version;
     END IF;
 
+    SELECT extversion INTO actual_version FROM pg_extension WHERE extname = 'pg_trgm';
+    IF actual_version <> '1.6' THEN
+        RAISE EXCEPTION 'expected pg_trgm 1.6, got %', actual_version;
+    END IF;
+
+    SELECT extversion INTO actual_version FROM pg_extension WHERE extname = 'fuzzystrmatch';
+    IF actual_version <> '1.2' THEN
+        RAISE EXCEPTION 'expected fuzzystrmatch 1.2, got %', actual_version;
+    END IF;
+
+    SELECT extversion INTO actual_version FROM pg_extension WHERE extname = 'unaccent';
+    IF actual_version <> '1.1' THEN
+        RAISE EXCEPTION 'expected unaccent 1.1, got %', actual_version;
+    END IF;
+
     IF abs(('[1,2,3]'::vector <-> '[1,2,4]'::vector) - 1.0) > 0.000001 THEN
         RAISE EXCEPTION 'vector distance operator returned an unexpected result';
     END IF;
 
     IF similarity('chronicle', 'cronicle') < 0.5 THEN
         RAISE EXCEPTION 'pg_trgm similarity returned an unexpected result';
+    END IF;
+
+    IF levenshtein_less_equal('cronicle', 'chronicle', 2) <> 1 THEN
+        RAISE EXCEPTION 'fuzzystrmatch bounded Levenshtein returned an unexpected result';
+    END IF;
+
+    IF unaccent('Märchen') <> 'Marchen' THEN
+        RAISE EXCEPTION 'unaccent returned an unexpected result';
     END IF;
 END
 $test$;

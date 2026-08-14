@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1.7
 # check=error=true
 
-ARG POSTGRES_IMAGE=postgres:17.10@sha256:7958605b474b3d264a969cb3a123d6aa00ad1e1fe9da8a69984dabb704d93317
-ARG POSTGRES_VERSION=17.10
+ARG POSTGRES_IMAGE=postgres:17.11@sha256:f86c774c7a51d0f05133f2ab70e4c384b589170458ab1df1ba83426d7cc30da7
+ARG POSTGRES_VERSION=17.11
 ARG POSTGRES_MAJOR=17
 ARG PGVECTOR_VERSION=0.8.6
 ARG PGVECTOR_SHA256=10bf9938906e5d643bbc4a7eea104b6f57ba4898e5b76b20e60484ea1d5a7f8f
@@ -60,7 +60,7 @@ ARG PGVECTOR_VERSION
 ARG PG_TEXTSEARCH_VERSION
 
 LABEL org.opencontainers.image.title="Chronicle Keeper PostgreSQL" \
-      org.opencontainers.image.description="PostgreSQL with pgvector, pg_textsearch, and pg_trgm for Chronicle Keeper" \
+      org.opencontainers.image.description="PostgreSQL with pgvector, pg_textsearch, pg_trgm, fuzzystrmatch, and unaccent for Chronicle Keeper" \
       org.opencontainers.image.source="https://github.com/ChronicleKeeper/ChronicleKeeperPostgres" \
       org.opencontainers.image.vendor="Chronicle Keeper" \
       org.chroniclekeeper.postgresql.version="${POSTGRES_VERSION}" \

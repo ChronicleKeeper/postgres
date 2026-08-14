@@ -23,14 +23,29 @@ Why deploy the binary first? PostgreSQL can only execute an extension's update s
 
 ## Current coordinated extension upgrade
 
-The image ships `pg_textsearch` `1.3.1` and `pgvector` `0.8.6`. Chronicle Keeper Unified migration `Version20260821100000` advances the extension catalogs after the new image is running. Its older `Version20260421140000` migration follows the installed version rather than requesting a `1.0.0` downgrade, so a fresh realm can migrate directly on the new image.
+The image ships PostgreSQL `17.11`, `pg_textsearch` `1.3.1`, `pgvector`
+`0.8.6`, `pg_trgm` `1.6`, `fuzzystrmatch` `1.2`, and `unaccent` `1.1`.
+PostgreSQL 17.11 fixes security and correctness defects in the server and in the
+`fuzzystrmatch` and `pg_trgm` contrib modules used by global search. A 17.10 to
+17.11 update does not require dump/restore, but it does require replacing and
+restarting the database container; review the
+[17.11 release notes](https://www.postgresql.org/docs/release/17.11/) for the
+configuration and cleanup caveats that apply to a deployment.
+
+Chronicle Keeper Unified migration `Version20260821100000` advances the
+separately built extension catalogs after the new image is running. Its older
+`Version20260421140000` migration follows the installed version rather than
+requesting a `1.0.0` downgrade, so a fresh realm can migrate directly on the
+new image. `Version20260821110000` and `Version20260821130000` install
+`unaccent` and `fuzzystrmatch` where realm search uses them.
 
 For existing data volumes, deploy the image first and then run the Unified realm migration command. Verify both catalogs afterward:
 
 ```sql
+SHOW server_version;
 SELECT extname, extversion
 FROM pg_extension
-WHERE extname IN ('pg_textsearch', 'vector')
+WHERE extname IN ('fuzzystrmatch', 'pg_textsearch', 'pg_trgm', 'unaccent', 'vector')
 ORDER BY extname;
 ```
 

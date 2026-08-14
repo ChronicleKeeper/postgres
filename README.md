@@ -4,7 +4,9 @@ This repository delivers Chronicle Keeper's standalone PostgreSQL container imag
 
 ## Key concepts
 
-- **One database image:** PostgreSQL 17, `pgvector`, `pg_textsearch`, and `pg_trgm` are built and verified together.
+- **One database image:** PostgreSQL 17, `pgvector`, `pg_textsearch`,
+  `pg_trgm`, `fuzzystrmatch`, and `unaccent` are built or supplied and verified
+  together.
 - **Reproducible inputs:** the upstream PostgreSQL image is digest-pinned, extension source archives are version-pinned, and their SHA-256 checksums are verified during the build.
 - **Safe releases:** CI smoke-tests both published architectures; Release Please turns Conventional Commits into semantic versions and publishes immutable and rolling GHCR tags.
 - **Explicit ownership:** this repository owns the image. Application schemas, Doctrine migrations, backups, and production database operations remain with their consuming services.
@@ -37,7 +39,13 @@ You can also start the included database-only Compose stack with `docker compose
 
 ## What does this repository own?
 
-The Dockerfile compiles the two third-party extensions that are not part of PostgreSQL, copies only their installation artifacts into the runtime image, and enables all three required extensions for newly initialized databases. The CI pipeline verifies extension versions and exercises vector distance, trigram similarity, and BM25 ranking. The release pipeline publishes Linux AMD64 and ARM64 images with an SBOM and provenance attestation.
+The Dockerfile compiles the two third-party extensions that are not part of
+PostgreSQL, copies only their installation artifacts into the runtime image,
+and enables all five required extensions for newly initialized databases. The
+CI pipeline verifies the server and extension versions and exercises vector
+distance, trigram similarity, bounded Levenshtein distance, accent folding, and
+BM25 ranking. The release pipeline publishes Linux AMD64 and ARM64 images with
+an SBOM and provenance attestation.
 
 Be aware that initialization scripts only run for a new data directory. Existing volumes retain their extension catalog state and need the coordinated application migration described in the operations guide. The current Unified consumer upgrades `pg_textsearch` and `pgvector` only after this image supplies their target binaries.
 

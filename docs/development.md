@@ -35,8 +35,9 @@ make test IMAGE=chroniclekeeper-postgres:ci
 [`scripts/test-image.sh`](../scripts/test-image.sh) creates a fresh, temporary PostgreSQL container and verifies the behavior at the image boundary. It checks that:
 
 - the server becomes ready with `pg_textsearch` preloaded;
-- all required extensions are created at their expected versions;
-- vector distance and trigram similarity operators work;
+- PostgreSQL and all required extensions run at their expected versions;
+- vector distance, trigram similarity, bounded Levenshtein distance, and accent
+  folding work;
 - a BM25 index can be created and returns the expected first result; and
 - the final PostgreSQL process remains healthy after initialization.
 
