@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/ChronicleKeeper/postgres/compare/v1.0.0...v1.1.0) (2026-08-14)
+
+
+### Features
+
+* Update Caches and Release Versions ([ed5f832](https://github.com/ChronicleKeeper/postgres/commit/ed5f832838c95e598ec9a23ef3fa96cceb9e7552))
+
 ## 1.0.0 (2026-08-12)
 
 
