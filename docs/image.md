@@ -48,6 +48,8 @@ services:
 
 The image inherits normal configuration, secrets, storage, locale, and authentication behavior from the official PostgreSQL image. PostgreSQL 17 storage remains mounted at `/var/lib/postgresql/data`. A future PostgreSQL 18 adoption needs an explicit cluster migration and the official image's changed `PGDATA`/volume layout; see the [upstream storage contract](https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata). The image does not bundle schema migrations, backup scheduling, connection pooling, or application-specific configuration.
 
+Atlavium is the image title and vendor. Preserve the registry path, GitHub organization, and `org.chroniclekeeper.*` labels when consuming metadata; these technical identifiers remain stable.
+
 ## How can you inspect a running image?
 
 ```bash

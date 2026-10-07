@@ -20,7 +20,7 @@ For release `1.2.3` at commit `012345...`, GHCR receives:
 | `1.2` | Moves within the minor line | Automatic patch updates |
 | `1` | Moves within the major line | Automatic compatible updates |
 | `latest` | Moves on every stable release | Development and discovery |
-| full Git SHA | Immutable by convention | Existing Chronicle Keeper compatibility and audit |
+| full Git SHA | Immutable by convention | Existing consumer compatibility and audit |
 | `sha-0123456789ab` | Immutable by convention | Readable audit reference |
 
 Every release is a Linux AMD64 image and includes BuildKit provenance plus an SBOM attestation.
@@ -35,7 +35,7 @@ GHCR publication utilizes the repository-scoped `GITHUB_TOKEN`; no personal regi
 
 For strict branch protection, add a fine-grained token as the `RELEASE_PLEASE_TOKEN` repository secret with access limited to this repository's contents and pull requests. GitHub suppresses workflow events caused by its built-in `GITHUB_TOKEN`, so the dedicated token lets the release pull request receive normal CI checks. If the secret is absent, Release Please falls back to `GITHUB_TOKEN`; in that mode, manually run `CI` against the release pull request branch before merging it.
 
-The existing package is `ghcr.io/chroniclekeeper/chroniclekeeper-postgres`. Because it was first published by ChronicleKeeperSaaS, an organization owner must grant this new repository write access in the package's **Manage Actions access** settings, or reconnect the package to this repository. Do this before the first release; otherwise GHCR correctly rejects the push with `permission_denied`.
+The package remains `ghcr.io/chroniclekeeper/chroniclekeeper-postgres` under the ChronicleKeeper organization. Atlavium naming changes the image title and vendor, not registry ownership. The publishing repository needs write access in the package's **Manage Actions access** settings or a linked repository with inherited permissions; otherwise GHCR rejects the push with `permission_denied`.
 
 Fresh-image and existing-volume CI checks validate the source revision; they do not publish it or update a consumer's pinned database digest. Coordinate extension-changing releases with the consuming application's explicit migrations. After publication, set the Atlavium application's repository Actions variable `POSTGRES_IMAGE` to `ghcr.io/chroniclekeeper/chroniclekeeper-postgres@sha256:<published-digest>`, run its CI/release against that image, and select the same digest in production. Its previous-image fallback cannot satisfy the new migration prerequisite. Publication success and production upgrade success remain separate checks.
 

@@ -140,6 +140,10 @@ jobs:
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
         with:
           images: ghcr.io/${{ github.repository_owner }}/chroniclekeeper-postgres
+          labels: |
+            org.opencontainers.image.title=Atlavium PostgreSQL
+            org.opencontainers.image.description=PostgreSQL with pgvector, pg_textsearch, pg_trgm, fuzzystrmatch, and unaccent for Atlavium
+            org.opencontainers.image.vendor=Atlavium
           tags: |
             type=raw,value=${{ needs.release-ref.outputs.version }}
             type=raw,value=${{ needs.release-ref.outputs.minor }}

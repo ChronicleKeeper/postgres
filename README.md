@@ -1,21 +1,21 @@
-# Chronicle Keeper PostgreSQL
+# Atlavium PostgreSQL
 
-This repository delivers Chronicle Keeper's standalone PostgreSQL container image. It keeps database runtime concerns independent from the application repository while preserving the extensions and initialization behavior that Chronicle Keeper expects.
+This repository delivers Atlavium's standalone PostgreSQL container image. It keeps database runtime concerns independent from the application repository while preserving the extensions and initialization behavior that Atlavium expects.
 
 ## Key concepts
 
-- **One database image:** PostgreSQL 17, `pgvector`, `pg_textsearch`,
-  `pg_trgm`, `fuzzystrmatch`, and `unaccent` are built or supplied and verified
-  together.
+- **One database image:** PostgreSQL 17, `pgvector`, `pg_textsearch`, `pg_trgm`, `fuzzystrmatch`, and `unaccent` are built or supplied and verified together.
 - **Reproducible inputs:** the upstream PostgreSQL image is digest-pinned, extension source archives are version-pinned, and their SHA-256 checksums are verified during the build.
-- **Safe releases:** CI smoke-tests the published architecture; Release Please turns Conventional Commits into semantic versions and publishes immutable and rolling GHCR tags.
+- **Safe releases:** CI checks fresh initialization and existing-volume upgrades on the supported architecture; Release Please turns Conventional Commits into semantic versions and publishes immutable and rolling GHCR tags.
 - **Explicit ownership:** this repository owns the image. Application schemas, Doctrine migrations, backups, and production database operations remain with their consuming services.
 
 ## Why does the database have its own repository?
 
-The old image lived below `.docker/postgres` in ChronicleKeeperSaaS. That made an application release pipeline responsible for compiling database extensions and made the image lifecycle depend on unrelated application changes. Here, a database dependency change produces a focused pull request, a focused test run, and its own release.
+Compiling database extensions deserves its own lifecycle. A database dependency change produces a focused pull request, an image-level compatibility test, and its own release without waiting for unrelated application changes.
 
-The image is intentionally opinionated. Utilize it when a Chronicle Keeper service needs the supported extension set with `pg_textsearch` preloaded. Prefer the upstream [`postgres`](https://hub.docker.com/_/postgres) image when a service only needs standard PostgreSQL; this repository should not become a generic collection of unrelated extensions.
+Utilize this image when an Atlavium service needs the supported extension set with `pg_textsearch` preloaded. Prefer the upstream [`postgres`](https://hub.docker.com/_/postgres) image when a service only needs standard PostgreSQL.
+
+The human-facing project name is Atlavium PostgreSQL. The package remains `ghcr.io/chroniclekeeper/chroniclekeeper-postgres`; the GitHub organization, `chroniclekeeper` database default, container names, and `org.chroniclekeeper.*` version labels remain compatibility identifiers. Renaming the product does not move packages or stored databases.
 
 ## Quick start
 
@@ -39,15 +39,9 @@ You can also start the included database-only Compose stack with `docker compose
 
 ## What does this repository own?
 
-The Dockerfile compiles the two third-party extensions that are not part of
-PostgreSQL, copies only their installation artifacts into the runtime image,
-and enables all five required extensions for newly initialized databases. The
-CI pipeline verifies the server and extension versions and exercises vector
-distance, trigram similarity, bounded Levenshtein distance, accent folding, and
-BM25 ranking. The release pipeline publishes a Linux AMD64 image with an SBOM
-and provenance attestation.
+The Dockerfile compiles the two third-party extensions that are not part of PostgreSQL, copies only their installation artifacts into the runtime image, and enables all five required extensions for newly initialized databases. The test suite verifies server and extension versions, vector and lexical queries, and continued use of existing indexes after a coordinated catalog upgrade. The release pipeline publishes a Linux AMD64 image with an SBOM and provenance attestation.
 
-Be aware that initialization scripts only run for a new data directory. Existing volumes retain their extension catalog state and need the coordinated application migration described in the operations guide. The current Unified consumer upgrades `pg_textsearch` and `pgvector` only after this image supplies their target binaries.
+Initialization scripts only run for a new data directory. Existing volumes retain their extension catalog state and need the coordinated application migration described in the [operations guide](docs/operations.md). Atlavium upgrades `pg_textsearch` and `pgvector` only after this image supplies their target binaries and PostgreSQL has restarted.
 
 ## Further reading
 

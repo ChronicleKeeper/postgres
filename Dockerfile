@@ -59,10 +59,10 @@ ARG POSTGRES_VERSION
 ARG PGVECTOR_VERSION
 ARG PG_TEXTSEARCH_VERSION
 
-LABEL org.opencontainers.image.title="Chronicle Keeper PostgreSQL" \
-      org.opencontainers.image.description="PostgreSQL with pgvector, pg_textsearch, pg_trgm, fuzzystrmatch, and unaccent for Chronicle Keeper" \
-      org.opencontainers.image.source="https://github.com/ChronicleKeeper/ChronicleKeeperPostgres" \
-      org.opencontainers.image.vendor="Chronicle Keeper" \
+LABEL org.opencontainers.image.title="Atlavium PostgreSQL" \
+      org.opencontainers.image.description="PostgreSQL with pgvector, pg_textsearch, pg_trgm, fuzzystrmatch, and unaccent for Atlavium" \
+      org.opencontainers.image.source="https://github.com/ChronicleKeeper/postgres" \
+      org.opencontainers.image.vendor="Atlavium" \
       org.chroniclekeeper.postgresql.version="${POSTGRES_VERSION}" \
       org.chroniclekeeper.pgvector.version="${PGVECTOR_VERSION}" \
       org.chroniclekeeper.pg-textsearch.version="${PG_TEXTSEARCH_VERSION}"
