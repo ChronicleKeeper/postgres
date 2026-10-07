@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/ChronicleKeeper/postgres/compare/v1.2.0...v1.3.0) (2026-10-07)
+
+
+### Features
+
+* **postgres:** upgrade search extensions and verify volume upgrades ([b58aee4](https://github.com/ChronicleKeeper/postgres/commit/b58aee4edf3d732660eeb6df756a20dd5c793661))
+
 ## [1.2.0](https://github.com/ChronicleKeeper/postgres/compare/v1.1.0...v1.2.0) (2026-08-14)
 
 
