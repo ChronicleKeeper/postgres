@@ -2,12 +2,14 @@
 
 set -euo pipefail
 
+source "$(dirname "${BASH_SOURCE[0]}")/test-helpers.sh"
+
 readonly image="${IMAGE:-chroniclekeeper-postgres:test}"
 readonly container_name="chroniclekeeper-postgres-test-$$"
 readonly database_name="chroniclekeeper_test"
 
 cleanup() {
-    docker rm --force "$container_name" >/dev/null 2>&1 || true
+    docker rm --force --volumes "$container_name" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
@@ -22,22 +24,7 @@ docker run --detach \
     --env POSTGRES_USER=postgres \
     "$image" >/dev/null
 
-readonly ready_query="SELECT count(*) = 5 FROM pg_extension WHERE extname IN ('vector', 'pg_textsearch', 'pg_trgm', 'fuzzystrmatch', 'unaccent');"
-for attempt in $(seq 1 60); do
-    if docker exec "$container_name" \
-        psql --tuples-only --no-align --username postgres --dbname "$database_name" \
-        --command "$ready_query" 2>/dev/null | grep --quiet '^t$'; then
-        break
-    fi
-
-    if [[ "$attempt" -eq 60 ]]; then
-        docker logs "$container_name"
-        echo "PostgreSQL did not initialize the required extensions in time." >&2
-        exit 1
-    fi
-
-    sleep 1
-done
+wait_for_postgres "$container_name" "$database_name"
 
 docker exec --interactive "$container_name" \
     psql --set=ON_ERROR_STOP=1 --username postgres --dbname "$database_name" <<'SQL'
@@ -54,32 +41,36 @@ BEGIN
     END IF;
 
     SELECT extversion INTO actual_version FROM pg_extension WHERE extname = 'vector';
-    IF actual_version <> '0.8.6' THEN
-        RAISE EXCEPTION 'expected vector 0.8.6, got %', actual_version;
+    IF actual_version IS DISTINCT FROM '0.8.7' THEN
+        RAISE EXCEPTION 'expected vector 0.8.7, got %', actual_version;
     END IF;
 
     SELECT extversion INTO actual_version FROM pg_extension WHERE extname = 'pg_textsearch';
-    IF actual_version <> '1.3.1' THEN
-        RAISE EXCEPTION 'expected pg_textsearch 1.3.1, got %', actual_version;
+    IF actual_version IS DISTINCT FROM '1.5.1' THEN
+        RAISE EXCEPTION 'expected pg_textsearch 1.5.1, got %', actual_version;
     END IF;
 
     SELECT extversion INTO actual_version FROM pg_extension WHERE extname = 'pg_trgm';
-    IF actual_version <> '1.6' THEN
+    IF actual_version IS DISTINCT FROM '1.6' THEN
         RAISE EXCEPTION 'expected pg_trgm 1.6, got %', actual_version;
     END IF;
 
     SELECT extversion INTO actual_version FROM pg_extension WHERE extname = 'fuzzystrmatch';
-    IF actual_version <> '1.2' THEN
+    IF actual_version IS DISTINCT FROM '1.2' THEN
         RAISE EXCEPTION 'expected fuzzystrmatch 1.2, got %', actual_version;
     END IF;
 
     SELECT extversion INTO actual_version FROM pg_extension WHERE extname = 'unaccent';
-    IF actual_version <> '1.1' THEN
+    IF actual_version IS DISTINCT FROM '1.1' THEN
         RAISE EXCEPTION 'expected unaccent 1.1, got %', actual_version;
     END IF;
 
     IF abs(('[1,2,3]'::vector <-> '[1,2,4]'::vector) - 1.0) > 0.000001 THEN
         RAISE EXCEPTION 'vector distance operator returned an unexpected result';
+    END IF;
+
+    IF (SELECT avg(embedding) FROM (SELECT '[1,2,3]'::vector AS embedding) sample WHERE false) IS NOT NULL THEN
+        RAISE EXCEPTION 'vector average of no rows must be NULL';
     END IF;
 
     IF similarity('chronicle', 'cronicle') < 0.5 THEN
@@ -125,8 +116,6 @@ END
 $test$;
 SQL
 
-# Confirm that initialization has completed and the final server process remains healthy.
-sleep 1
-docker exec "$container_name" pg_isready --username postgres --dbname "$database_name"
+docker exec "$container_name" pg_isready --host=127.0.0.1 --username postgres --dbname "$database_name"
 
 echo "Image smoke test passed for ${image}."

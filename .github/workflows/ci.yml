@@ -57,3 +57,9 @@ jobs:
           IMAGE: chroniclekeeper-postgres:ci
           SKIP_BUILD: "true"
         run: scripts/test-image.sh
+
+      - name: Upgrade existing database volume
+        env:
+          IMAGE: chroniclekeeper-postgres:ci
+          SKIP_BUILD: "true"
+        run: scripts/test-upgrade.sh

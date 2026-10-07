@@ -4,13 +4,13 @@ HADOLINT_IMAGE ?= hadolint/hadolint:v2.15.1-alpine@sha256:a1d49ae1a4e83c1dbad26b
 
 .DEFAULT_GOAL := test
 
-.PHONY: build check lint test
+.PHONY: build check lint test test-upgrade
 
 build:
 	docker build --pull --tag "$(IMAGE)" .
 
 check:
-	bash -n initdb/00-create-extensions.sh scripts/test-image.sh
+	@for script in initdb/*.sh scripts/*.sh; do bash -n "$$script" || exit 1; done
 	jq --exit-status 'type == "object"' .release-please-manifest.json release-please-config.json >/dev/null
 
 lint: check
@@ -19,3 +19,7 @@ lint: check
 
 test: check
 	IMAGE="$(IMAGE)" scripts/test-image.sh
+	IMAGE="$(IMAGE)" SKIP_BUILD=true scripts/test-upgrade.sh
+
+test-upgrade: check
+	IMAGE="$(IMAGE)" scripts/test-upgrade.sh

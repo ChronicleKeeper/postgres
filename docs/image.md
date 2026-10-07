@@ -7,28 +7,17 @@ For what this image is and why it has its own lifecycle, start at the [repositor
 | Component | Version | Purpose |
 | --- | --- | --- |
 | PostgreSQL | 17.11 | Database server and PostgreSQL-contrib extensions |
-| pgvector | 0.8.6 | Vector columns, indexes, and distance operators |
-| pg_textsearch | 1.3.1 | BM25 relevance-ranked full-text search |
+| pgvector | 0.8.7 | Vector columns, indexes, and distance operators |
+| pg_textsearch | 1.5.1 | BM25 relevance-ranked full-text search |
 | pg_trgm | 1.6 | Indexed substring and word-similarity retrieval |
 | fuzzystrmatch | 1.2 | Bounded Levenshtein distance for complete-title proximity |
 | unaccent | 1.1 | Accent-insensitive English/German full-text configurations |
 
-All versions are pinned in the `Dockerfile`. PostgreSQL is pinned by
-multi-platform manifest digest; the three contrib extension versions travel
-with that base and are asserted by the smoke test. The source archives for
-pgvector and pg_textsearch are checked against committed SHA-256 values before
-compilation. pgvector's host-specific CPU optimizations are disabled so an
-AMD64 build can run on a different AMD64 machine. The final stage starts again
-from the clean PostgreSQL image, so compilers and source trees do not enter the
-runtime image.
+All versions are pinned in the [`Dockerfile`](../Dockerfile). The PostgreSQL 17.11 Debian trixie base is pinned to multi-platform manifest digest `sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3`; refreshing this base does not change the PostgreSQL version or major line. The three contrib extension versions travel with that base and are asserted by the smoke test. The source archives for pgvector and pg_textsearch are checked against committed SHA-256 values before compilation. pgvector's host-specific CPU optimizations are disabled so an AMD64 build can run on a different AMD64 machine. The final stage starts again from the clean PostgreSQL image, so compilers and source trees do not enter the runtime image.
 
 ## What happens on first start?
 
-The upstream PostgreSQL entrypoint initializes `POSTGRES_DB` and then executes
-[`initdb/00-create-extensions.sh`](../initdb/00-create-extensions.sh). That
-script enables `vector`, `pg_textsearch`, `pg_trgm`, `fuzzystrmatch`, and
-`unaccent` in the selected database. If `POSTGRES_DB` is absent, the Chronicle
-Keeper default is `chroniclekeeper`.
+The upstream PostgreSQL entrypoint initializes `POSTGRES_DB` and then executes [`initdb/00-create-extensions.sh`](../initdb/00-create-extensions.sh). That script enables `vector`, `pg_textsearch`, `pg_trgm`, `fuzzystrmatch`, and `unaccent` in the selected database. Without `POSTGRES_DB`, the upstream entrypoint uses `POSTGRES_USER`, which defaults to `postgres`. The included Compose stack and quick-start command select the compatibility database name `chroniclekeeper` explicitly.
 
 `pg_textsearch` must be available through `shared_preload_libraries`. The image's default command starts PostgreSQL with that setting. If you replace the container command, preserve the setting yourself:
 
@@ -57,7 +46,7 @@ services:
 
 `latest`, major, and minor tags are convenient tracking channels, but they move. An exact semantic version is recommended for production. A full commit SHA tag is also published for audit and rollback workflows.
 
-The image inherits normal configuration, secrets, storage, locale, and authentication behavior from the official PostgreSQL image. It deliberately does not bundle schema migrations, user creation beyond the upstream entrypoint, backup scheduling, connection pooling, or application-specific configuration.
+The image inherits normal configuration, secrets, storage, locale, and authentication behavior from the official PostgreSQL image. PostgreSQL 17 storage remains mounted at `/var/lib/postgresql/data`. A future PostgreSQL 18 adoption needs an explicit cluster migration and the official image's changed `PGDATA`/volume layout; see the [upstream storage contract](https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata). The image does not bundle schema migrations, backup scheduling, connection pooling, or application-specific configuration.
 
 ## How can you inspect a running image?
 
